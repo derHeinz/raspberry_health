@@ -24,15 +24,6 @@ class RaspberryHealthWindows(RaspberryHealth):
 
 	def query_cpu_temp(self):
 		return "18"
-		
-	def query_cpu_clock(self):
-		return "500"
-		
-	def query_sys_temp(self):
-		return "82"
-		
-	def query_sys_hum(self):
-		return "42"
 
 class RaspberryHealthLinux(RaspberryHealth):
 	
@@ -40,26 +31,32 @@ class RaspberryHealthLinux(RaspberryHealth):
 		super(RaspberryHealthLinux, self).__init__()
 		self.subprocess = __import__('subprocess')
 		self.dht = __import__('Adafruit_DHT')
+		
+	def _query_process(self, args):
+		process = self.subprocess.Popen(args, stdout=self.subprocess.PIPE)
+		output, _error = process.communicate()
+		return output
 
 	def query_cpu_temp(self):
-		"""get cpu temperature using vcgencmd"""
-		process = self.subprocess.Popen(['vcgencmd', 'measure_temp'], stdout=self.subprocess.PIPE)
-		output, _error = process.communicate()
+		output = self._query_process(['vcgencmd', 'measure_temp'])
 		return float(output[output.index('=') + 1:output.rindex("'")])
 		
 	def query_cpu_clock(self):
-		process = self.subprocess.Popen(['vcgencmd', 'measure_clock', 'arm'], stdout=self.subprocess.PIPE)
-		output, _error = process.communicate()
+		output = self._query_process(['vcgencmd', 'measure_clock', 'arm'])
 		return long(output[output.index('=') + 1:])
+		
+	def query_sys_temp(self):
+		output = self._query_process(['cat', '/sys/class/thermal/thermal_zone0/temp'])
+		return float(output) / 1000
 		
 	def _query_dht(self):
 		return self.dht.read_retry(self.dht.DHT22, 26)
 		
-	def query_sys_temp(self):
+	def query_external_temp(self):
 		humidity, temperature = self._query_dht()
 		return temperature
 		
-	def query_sys_hum(self):
+	def query_external_hum(self):
 		humidity, temperature = self._query_dht()
 		return humidity
 	
