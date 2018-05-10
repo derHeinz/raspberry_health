@@ -20,8 +20,7 @@ class NetworkAPI(threading.Thread):
 		self.ctx.push()
 
 		# register some endpoints
-		self.app.add_url_rule(rule="/v1.0/cpu_temp", endpoint="cpu_temp", view_func=self.cpu_temp, methods=['GET'])
-		self.app.add_url_rule(rule="/v1.0/cpu_clock", endpoint="cpu_clock", view_func=self.cpu_clock, methods=['GET'])
+		self.app.add_url_rule(rule="/v1.0/query/<string:meth>", view_func=self.controller, methods=['GET'])
 		
 		# register default error handler
 		self.app.register_error_handler(code_or_exception=404, f=self.not_found)
@@ -38,13 +37,22 @@ class NetworkAPI(threading.Thread):
 	def _jsonify(self, property, value):
 		return jsonify({property: value})
 		
-	def cpu_temp(self):
-		return self._jsonify("cpu_temp", self._health.cpu_temp())
-	
-	def cpu_clock(self):
-		return self._jsonify("cpu_clock", self._health.cpu_clock())
-	
-	
+	def controller(self, meth):
+		# illegal 
+		if (meth.startswith("_")):
+			logging.debug("attempt to call function with \"_\"")
+			return self.wrong_request()
+
+		function_name = "query_" + meth
+		try:
+			method = getattr(self._health, function_name)
+		except AttributeError:
+			logging.debug("attempt to call unknown function \"" + function_name + "\"")
+			return self.wrong_request()
+			
+		logging.debug("calling function \"" + function_name + "\"")
+		return self._jsonify( meth, method())
+
 # only for test
 if __name__ == '__main__':
 	nw_api = NetworkAPI(None)

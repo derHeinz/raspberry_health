@@ -22,26 +22,47 @@ class RaspberryHealthWindows(RaspberryHealth):
 	def __init__(self):
 		super(RaspberryHealthWindows, self).__init__()
 
-	def cpu_temp(self):
+	def query_cpu_temp(self):
 		return "18"
 		
-	def cpu_clock(self):
+	def query_cpu_clock(self):
 		return "500"
+		
+	def query_sys_temp(self):
+		return "82"
+		
+	def query_sys_hum(self):
+		return "42"
 
 class RaspberryHealthLinux(RaspberryHealth):
-	subprocess = __import__('subprocess')
 	
 	def __init__(self):
 		super(RaspberryHealthLinux, self).__init__()
+		self.subprocess = __import__('subprocess')
+		self.dht = __import__('Adafruit_DHT')
 
-	def cpu_temp(self):
+	def query_cpu_temp(self):
 		"""get cpu temperature using vcgencmd"""
 		process = self.subprocess.Popen(['vcgencmd', 'measure_temp'], stdout=self.subprocess.PIPE)
 		output, _error = process.communicate()
 		return float(output[output.index('=') + 1:output.rindex("'")])
 		
-	def cpu_clock(self):
-		return "500"
+	def query_cpu_clock(self):
+		process = self.subprocess.Popen(['vcgencmd', 'measure_clock', 'arm'], stdout=self.subprocess.PIPE)
+		output, _error = process.communicate()
+		return float(output[output.index('=') + 1:])
+		
+	def _query_dht(self):
+		return self.dht.read_retry(self.dht.DHT22, 26)
+		
+	def query_sys_temp(self):
+		humidity, temperature = _query_dht()
+		return temperature
+		
+	def query_sys_hum(self):
+		humidity, temperature = _query_dht()
+		return humidity
+	
 		
 def signal_handler(signal, frame):
 	print('Exiting!')
@@ -49,7 +70,7 @@ def signal_handler(signal, frame):
 
 if __name__ == '__main__':
 	pf = platform.system()
-	print("Starting \nPress CTRL-C to exit")
+	print("Starting on " + pf + "\nPress CTRL-C to exit")
 	ph = None
 	if "Windows" == pf:
 		ph = RaspberryHealthWindows()
