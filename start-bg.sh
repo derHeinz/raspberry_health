@@ -1,0 +1,1 @@
+sudo nohup python raspberry_health.py &>/dev/null &
