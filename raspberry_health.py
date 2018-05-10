@@ -50,17 +50,17 @@ class RaspberryHealthLinux(RaspberryHealth):
 	def query_cpu_clock(self):
 		process = self.subprocess.Popen(['vcgencmd', 'measure_clock', 'arm'], stdout=self.subprocess.PIPE)
 		output, _error = process.communicate()
-		return float(output[output.index('=') + 1:])
+		return long(output[output.index('=') + 1:])
 		
 	def _query_dht(self):
 		return self.dht.read_retry(self.dht.DHT22, 26)
 		
 	def query_sys_temp(self):
-		humidity, temperature = _query_dht()
+		humidity, temperature = self._query_dht()
 		return temperature
 		
 	def query_sys_hum(self):
-		humidity, temperature = _query_dht()
+		humidity, temperature = self._query_dht()
 		return humidity
 	
 		
