@@ -50,7 +50,7 @@ class RaspberryHealthLinux(RaspberryHealth):
 		return float(output) / 1000
 		
 	def _query_dht(self):
-		return self.dht.read_retry(self.dht.DHT22, 26)
+		return self.dht.read_retry(self.dht.DHT22, 24)
 		
 	def query_external_temp(self):
 		humidity, temperature = self._query_dht()
